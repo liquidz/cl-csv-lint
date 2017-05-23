@@ -22,7 +22,9 @@ exec ros -Q -- $0 "$@"
       (yason:parse stream))))
 
 (defun read-csv (csv-file &key (skip-header nil))
-  (let ((csv (cl-csv:read-csv csv-file)))
+  (let ((csv (with-open-file (stream csv-file :if-does-not-exist nil)
+                (when stream
+                  (cl-csv:read-csv stream)))))
     (if skip-header
       (cdr csv)
       csv)))
@@ -61,11 +63,10 @@ exec ros -Q -- $0 "$@"
       (sb-ext:exit :code 1))
 
     (let ((rule (read-json rule-file))
-          (csv  (read-csv (first free) :skip-header skip-header)))
+          (csv  (read-csv (car free) :skip-header skip-header)))
       (let ((result (validate-csv rule csv)))
         (if result
           (format t "~A~%" result)
           (format t "valid"))))))
-      
 
 ;;; vim: set ft=lisp lisp:
