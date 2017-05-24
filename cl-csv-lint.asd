@@ -13,7 +13,9 @@
   :license ""
   :depends-on (
       :cl-ppcre
+      :alexandria
       :cl-csv
+      :jsown
       :yason)
   :components ((:module "src"
                 :components

@@ -4,53 +4,59 @@
   (:export :validate))
 (in-package :cl-csv-lint)
 
-(defun open-stream (file-path f)
-  (with-open-file (stream file-path :if-does-not-exist nil)
-    (when stream
-      (funcall f stream))))
 
 (defun read-json (json-file)
-  (open-stream json-file (lambda (stream) (yason:parse stream))))
+  (jsown:parse
+    (alexandria:read-file-into-string json-file)))
+
+(defun read-rule-json (json-file)
+  (let ((json (read-json json-file)))
+    (loop for j in json do
+      (let ((pattern (jsown:val j "pattern")))
+        (setf (jsown:val j "pattern")
+              (ppcre:create-scanner pattern))))
+    json))
 
 (defun read-csv (csv-file &key (skip-header nil))
-  (let ((csv (open-stream csv-file (lambda (stream) (cl-csv:read-csv stream)))))
+  (let ((csv (with-open-file (stream csv-file :if-does-not-exist nil)
+               (when stream
+                 (cl-csv:read-csv stream)))))
     (if skip-header
       (cdr csv)
       csv)))
 
-(defun validate-csv-column (rule-hash csv-value)
-  (let ((name    (gethash "name" rule-hash))
-        (pattern (gethash "pattern" rule-hash)))
+;(declaim (ftype (function (list list) (values string &optional))))
+(defun validate-csv-column (rule csv-value)
+  ;(declare (type string rule-file))
+  ;(declare (type string csv-file))
+  ;(declare (type boolean skip-header))
+  (let ((name    (jsown:val rule "name"))
+        (pattern (jsown:val rule "pattern")))
     (unless (ppcre:scan pattern csv-value)
       (format () "~A error: rule[~A] value[~A]"
                name pattern csv-value))))
 
-(defun validate-csv-row (rule-hash-list target-csv-row)
-  (if (not (= (length rule-hash-list) (length target-csv-row)))
+(defun validate-csv-row (rules target-csv-row)
+  (if (not (= (length rules) (length target-csv-row)))
     (list (format () "invalid length: expected[~A] actual[~A]"
-                  (length rule-hash-list) (length target-csv-row)))
+                  (length rules) (length target-csv-row)))
     (remove-if #'not
                (mapcar #'validate-csv-column
-                       rule-hash-list
+                       rules
                        target-csv-row))))
 
-(defun validate-csv (rule csv)
+(defun validate-csv (rules csv)
   (reduce (lambda (res row)
-            (append res (validate-csv-row rule row)))
+            (nconc res (validate-csv-row rules row)))
           csv :initial-value ()))
 
-;(declaim (ftype (function (string string) (values (simple-array string (*)) &optional))))
 (defun validate (rule-file csv-file &key (skip-header nil))
-  ;(declare (optimize (speed 3)))
-  ;(declare (type string rule-file))
-  ;(declare (type string csv-file))
-  ;(declare (type boolean skip-header))
-  (let ((rule (read-json rule-file))
-        (csv  (read-csv csv-file :skip-header skip-header)))
-    (validate-csv rule csv)))
+  (let ((rules (read-rule-json rule-file))
+        (csv   (read-csv csv-file :skip-header skip-header)))
+    (validate-csv rules csv)))
 
-
-
+;(sb-profile:profile "CL-CSV-LINT")
 ;(time (validate
-;        "~/src/github.com/liquidz/cl-csv-lint/benchmark/rule.json"
-;        "~/src/github.com/liquidz/cl-csv-lint/benchmark/MOCK_DATA.csv"))
+;        "~/.roswell/local-projects/cl-csv-lint/benchmark/rule.json"
+;        "~/.roswell/local-projects/cl-csv-lint/benchmark/MOCK_DATA.csv"))
+;(sb-profile:report)
