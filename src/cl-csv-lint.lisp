@@ -39,7 +39,18 @@
             (append res (validate-csv-row rule row)))
           csv :initial-value ()))
 
+;(declaim (ftype (function (string string) (values (simple-array string (*)) &optional))))
 (defun validate (rule-file csv-file &key (skip-header nil))
+  ;(declare (optimize (speed 3)))
+  ;(declare (type string rule-file))
+  ;(declare (type string csv-file))
+  ;(declare (type boolean skip-header))
   (let ((rule (read-json rule-file))
         (csv  (read-csv csv-file :skip-header skip-header)))
     (validate-csv rule csv)))
+
+
+
+;(time (validate
+;        "~/src/github.com/liquidz/cl-csv-lint/benchmark/rule.json"
+;        "~/src/github.com/liquidz/cl-csv-lint/benchmark/MOCK_DATA.csv"))

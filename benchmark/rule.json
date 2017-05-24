@@ -1,0 +1,6 @@
+[
+    {"name": "id",         "pattern": "^[0-9]+$"},
+    {"name": "first_name", "pattern": "^[A-Za-z '-]+$"},
+    {"name": "last_name",  "pattern": "^[A-Za-z '-]+$"},
+    {"name": "gender",     "pattern": "^(Male|Female)$"}
+]
