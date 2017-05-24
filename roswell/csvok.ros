@@ -1,0 +1,35 @@
+#!/bin/sh
+#|-*- mode:lisp -*-|#
+#| <Put a one-line description here>
+exec ros -Q -- $0 "$@"
+|#
+(progn ;;init forms
+  (ros:ensure-asdf)
+  (ql:quickload '(unix-options
+                  cl-csv-lint)
+                :silent t))
+
+(defpackage :ros.script.csvok
+  (:use :cl
+        :unix-options))
+(in-package :ros.script.csvok)
+
+(defun main (&rest argv)
+  (with-cli-options
+    (argv t) (skip-header &parameters rule-file)
+
+    (unless rule-file
+      (format t "rule-file must be set~%")
+      (sb-ext:exit :code 1))
+
+    (unless (first free)
+      (print "csv-file must be set")
+      (sb-ext:exit :code 1))
+
+    (let ((result (cl-csv-lint:validate
+                    rule-file (car free)
+                    :skip-header skip-header)))
+      (if result
+        (format t "~A~%" result)
+        (format t "valid")))))
+;;; vim: set ft=lisp lisp:
