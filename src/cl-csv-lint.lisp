@@ -4,7 +4,6 @@
   (:export :validate))
 (in-package :cl-csv-lint)
 
-
 (defun read-json (json-file)
   (jsown:parse
     (alexandria:read-file-into-string json-file)))
@@ -55,8 +54,11 @@
         (csv   (read-csv csv-file :skip-header skip-header)))
     (validate-csv rules csv)))
 
+
 ;(sb-profile:profile "CL-CSV-LINT")
-;(time (validate
-;        "~/.roswell/local-projects/cl-csv-lint/benchmark/rule.json"
-;        "~/.roswell/local-projects/cl-csv-lint/benchmark/MOCK_DATA.csv"))
+;(time
+;  (loop repeat 10 do
+;        (validate
+;          "~/.roswell/local-projects/cl-csv-lint/benchmark/rule.json"
+;          "~/.roswell/local-projects/cl-csv-lint/benchmark/MOCK_DATA.csv")))
 ;(sb-profile:report)
